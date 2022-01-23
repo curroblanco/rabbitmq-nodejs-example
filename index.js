@@ -20,6 +20,19 @@ amqp.connect(rabbitUrl, function (error0, connection) {
     channel.assertQueue(queue, {
       durable: true,
     });
+
+    channel.consume(
+        queue,
+        function (msg) {
+          if (msg.content) {
+            console.log(" [x] %s", msg.content.toString());
+          }
+        },
+        {
+          noAck: true,
+        }
+      );
+
     app.post("/", function (req, res) {
       channel.sendToQueue(queue, Buffer.from(JSON.stringify(req.body)), {
         persistent: true,
@@ -27,33 +40,6 @@ amqp.connect(rabbitUrl, function (error0, connection) {
       console.log(req.body);
       res.send(JSON.stringify(req.body));
     });
-  });
-});
-
-amqp.connect(rabbitUrl, function (error0, connection) {
-  if (error0) {
-    throw error0;
-  }
-  connection.createChannel(function (error1, channel) {
-    const exchange = "logs";
-
-    channel.assertQueue(queue, {
-      durable: true,
-    });
-    console.log(" [*] Waiting for messages in %s.", queue);
-    channel.bindQueue(queue, exchange, "");
-
-    channel.consume(
-      queue,
-      function (msg) {
-        if (msg.content) {
-          console.log(" [x] %s", msg.content.toString());
-        }
-      },
-      {
-        noAck: true,
-      }
-    );
   });
 });
 
